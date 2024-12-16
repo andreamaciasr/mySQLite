@@ -6,6 +6,7 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.*;
+import java.util.function.Function;
 
 
 public class MySqlite {
@@ -41,17 +42,29 @@ public class MySqlite {
 
 
 
+//        HashMap<String, Object> queriesMap = new HashMap<>();
+//        queriesMap.put("SELECT", new ArrayList<String>()); // movies.title, directors.name;
+//        queriesMap.put("INSERT INTO", "");
+//        queriesMap.put("VALUES", new ArrayList<String>());
+//        queriesMap.put("UPDATE", new ArrayList<String>());
+//        queriesMap.put("SET", new ArrayList<String>());
+//        queriesMap.put("DELETE", new ArrayList<String>());
+//        queriesMap.put("FROM", ""); // movies.csv
+//        queriesMap.put("WHERE", new ArrayList<String>()); // movies.genre = 'Sci-Fi';
+//        queriesMap.put("JOIN", ""); // directors
+//        queriesMap.put("ON", ""); // movies.director_id = directors.id;
+
         HashMap<String, Object> queriesMap = new HashMap<>();
-        queriesMap.put("SELECT", new ArrayList<String>()); // movies.title, directors.name;
-        queriesMap.put("INSERT INTO", "");
-        queriesMap.put("VALUES", new ArrayList<String>());
-        queriesMap.put("UPDATE", new ArrayList<String>());
-        queriesMap.put("SET", new ArrayList<String>());
-        queriesMap.put("DELETE", new ArrayList<String>());
-        queriesMap.put("FROM", ""); // movies.csv
-        queriesMap.put("WHERE", new ArrayList<String>()); // movies.genre = 'Sci-Fi';
-        queriesMap.put("JOIN", ""); // directors
-        queriesMap.put("ON", ""); // movies.director_id = directors.id;
+        queriesMap.put("SELECT", null);
+        queriesMap.put("INSERT INTO", null);
+        queriesMap.put("VALUES", null);
+        queriesMap.put("UPDATE", null);
+        queriesMap.put("SET", null);
+        queriesMap.put("DELETE", null);
+        queriesMap.put("FROM", null);
+        queriesMap.put("WHERE", null);
+        queriesMap.put("JOIN", null);
+        queriesMap.put("ON", null);
 
         queriesMap.put("SELECT", SELECTArr);
         queriesMap.put("FROM", FROM);
@@ -60,25 +73,19 @@ public class MySqlite {
 
         // ------------->
 
-        CSVTable csvTable = new CSVTable();
         System.out.println(queriesMap);
-//        List<LinkedHashMap<String, String>> table1 = csvTable.createTableFromCSV(table1path);
-//        List<LinkedHashMap<String, String>> table2 = Objects.equals(table2path, "") ? null : csvTable.createTableFromCSV(table2path);
-//        System.out.println("Table 1: " + table1);
-//        System.out.println("Table 2: " + table2);
-//        System.out.println("Query Array: " + Arrays.toString(queryArr));
 
         QueryExecutor queryExecutor = new QueryExecutor(queriesMap, queryArr);
-        List<LinkedHashMap<String, String>> resultsTable = queryExecutor.runQueryViaFirstCommand();
+        List<LinkedHashMap<String, Object>> resultsTable = queryExecutor.runQueryViaFirstCommand();
 
-
-
-
-        //QueryExecutor queryExecutor = new QueryExecutor(table1, table2, queriesMap, queryArr);
-       // runQueryViaFirstCommand should return the final results;
-       // List<LinkedHashMap<String, String>> resultsTable = queryExecutor.runQueryViaFirstCommand();
+        System.out.println(resultsTable);
 
 
     }
 
 }
+
+//SELECT movies.title, directors.name
+//FROM movies
+//JOIN directors ON movies.director_id = directors.id
+//WHERE movies.genre = 'Drama'

@@ -6,27 +6,37 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class CSVTable {
+    private final List<LinkedHashMap<String, Object>> table;
+    private String[] headers;
 
+    public CSVTable() {
+        this.table = new ArrayList<>();
+    }
 
-    public List<LinkedHashMap<String, String>> createTableFromCSV(String filePath) {
+    public void createTableFromCSV(String filePath) {
         int id = 0;
-        List<LinkedHashMap<String, String>> table = new ArrayList<>();
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
-            String[] headers = reader.readNext();
+            headers = reader.readNext();
             String[] line;
             while ((line = reader.readNext()) != null) {
-                LinkedHashMap<String, String> row = new LinkedHashMap<>();
+                LinkedHashMap<String, Object> row = new LinkedHashMap<>();
                 row.put("InternalId", String.valueOf(id));
                 id++;
                 for (int i = 0; i < headers.length; i++) {
                     row.put(headers[i], line[i]);
                 }
-
                 table.add(row);
             }
         } catch (IOException | com.opencsv.exceptions.CsvValidationException e) {
             e.printStackTrace();
         }
+    }
+
+    public String[] getColumnsNames() {
+        return headers != null ? headers : new String[0];
+    }
+
+    public List<LinkedHashMap<String, Object>> getTable() {
         return table;
     }
 }
