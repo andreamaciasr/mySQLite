@@ -30,17 +30,24 @@ public class MySqlite {
 
 //        String table1path = (String) queriesMap.get("FROM");
 //        String table2path = (String) queriesMap.get("ON");
-
+        String [][] testWhere = {
+                {"movies_demo.title", "=", "'Selma'"},
+                {"movies_demo.genre", "=", "'Drama'"},
+                {"movies_demo.year", "=", "2014"}, // not in the table
+                {"directors_demo.name", "=", "'Ava DuVernay'"},
+                {"directors_demo.id", "=", "5"}
+        };
         // -----------> hardcoding before parser works. Delete after.
         String table1path = "test_data/movies_demo.csv";
         String table2path = "test_data/directors_demo.csv";
         String[] SELECTArr = {"movies_demo.title", "directors_demo.name"};
         String FROM = table1path;
         String JOIN = table2path;
-        String[] WHERE = "movies_demo.title = 'Selma'".split(" "); // fix the split
+        String[] WHERE = testWhere[3]; // fix the split
         String ON = "movies_demo.director_id == directors_demo.id";
         String[] queryArr = "SELECT movies.title, directors.name FROM \"test_data/movies_demo.csv\" JOIN \"test_data/directors_demo.csv\" ON movies.director_id = directors.id".split(" ");
 
+        // array of WHERE arguments to test:
 
 
 //        HashMap<String, Object> queriesMap = new HashMap<>();

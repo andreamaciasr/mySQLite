@@ -21,7 +21,7 @@ public class QueryParser {
 
     }
 
-
+//
     public HashMap<String, Object> getQueries() {
         return queries;
     }

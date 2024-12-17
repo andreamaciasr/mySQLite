@@ -8,7 +8,7 @@ import java.util.List;
 public class CSVTable {
     private final List<LinkedHashMap<String, Object>> table;
     private String[] headers;
-
+// name it "table"
     public CSVTable() {
         this.table = new ArrayList<>();
     }
@@ -36,7 +36,12 @@ public class CSVTable {
         return headers != null ? headers : new String[0];
     }
 
-    public List<LinkedHashMap<String, Object>> getTable() {
+    public List<LinkedHashMap<String, Object>> getTable() { // select *
         return table;
     }
+
+//    public CSVTable getTableWithJoin(CSVTable table2, String on) {
+//        //
+//        return table;
+//    }
 }
