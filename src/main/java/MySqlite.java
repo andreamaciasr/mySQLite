@@ -37,6 +37,7 @@ public class MySqlite {
         String[] SELECTArr = {"movies_demo.title", "directors_demo.name"};
         String FROM = table1path;
         String JOIN = table2path;
+        String[] WHERE = "movies_demo.title = 'Selma'".split(" "); // fix the split
         String ON = "movies_demo.director_id == directors_demo.id";
         String[] queryArr = "SELECT movies.title, directors.name FROM \"test_data/movies_demo.csv\" JOIN \"test_data/directors_demo.csv\" ON movies.director_id = directors.id".split(" ");
 
@@ -70,6 +71,7 @@ public class MySqlite {
         queriesMap.put("FROM", FROM);
         queriesMap.put("JOIN", JOIN);
         queriesMap.put("ON", ON);
+        queriesMap.put("WHERE", WHERE);
 
         // ------------->
 

@@ -1,8 +1,5 @@
-import org.apache.commons.collections4.iterators.SkippingIterator;
-
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,11 +14,9 @@ public class QueryExecutor {
     final String secondTableName;
     final String[] WHEREArgs;
     final String[] SELECTArgs;
-    final String[] table1Columns;
-    final String[] table2Columns;
 
-    final String[] headersTable1;
-    final String[] headersTable2;
+    final String[] table1Headers;
+    final String[] table2Headers;
     Map<String, BiFunction<Object, Object, Boolean>> whereOperations = new HashMap<>();
     CSVTable csvTable1 = new CSVTable();
     CSVTable csvTable2 = new CSVTable();
@@ -30,11 +25,11 @@ public class QueryExecutor {
     public QueryExecutor(HashMap<String, Object> queriesMap, String[] queryArr) {
         csvTable1.createTableFromCSV((String) queriesMap.get("FROM"));
         this.table1 = csvTable1.getTable();
-        this.headersTable1 = csvTable1.getColumnsNames();
+        this.table1Headers = csvTable1.getColumnsNames();
 
         csvTable2.createTableFromCSV((String) queriesMap.get("JOIN"));
         this.table2 = csvTable2.getTable();
-        this.headersTable2 = csvTable2.getColumnsNames();
+        this.table2Headers = csvTable2.getColumnsNames();
 
         this.queriesMap = queriesMap;
         this.queryArr = queryArr;
@@ -43,10 +38,6 @@ public class QueryExecutor {
         this.secondTableName = extractTableName((String) this.queriesMap.get("JOIN"));  // remove .csv from tableName.csv
         this.WHEREArgs = queriesMap.get("WHERE") != null ? (String[]) queriesMap.get("WHERE") : null;
         this.SELECTArgs = queriesMap.get("SELECT") != null ? (String[]) this.queriesMap.get("SELECT") : null;
-        this.table1Columns = null;
-        this.table2Columns = null;
-
-        System.out.println("headers: " + Arrays.toString(headersTable1) + " " + Arrays.toString(headersTable2));
 
         addWhereOperation("=", (left, right) -> compare(left, right) == 0);
         addWhereOperation("!=", (left, right) -> compare(left, right) != 0);
@@ -54,7 +45,6 @@ public class QueryExecutor {
         addWhereOperation(">", (left, right) -> compare(left, right) > 0);
         addWhereOperation("<=", (left, right) -> compare(left, right) <= 0);
         addWhereOperation(">=", (left, right) -> compare(left, right) >= 0);
-
 
         System.out.println("firstTableName: " + firstTableName);
         System.out.println("SecondTableName: " + secondTableName);
@@ -77,7 +67,6 @@ public class QueryExecutor {
         }
     }
 
-
     public String extractTableName(String filePath) {
         String regex = ".*/(.*?)\\.csv$|^(.*?)\\.csv$";
         Pattern pattern = Pattern.compile(regex);
@@ -88,34 +77,6 @@ public class QueryExecutor {
         return null;
     }
 
-    public Boolean doWhere(LinkedHashMap<String, Object> entry1, LinkedHashMap<String, Object> entry2) {
-        Object leftValue;
-        Object rightValue;
-        String leftStatementTableName = removeEverythingAfterDot(WHEREArgs[0]);
-        String leftStatementFieldName = removeEverythingBeforeDot(WHEREArgs[0]);
-
-        if (Objects.equals(leftStatementTableName, this.firstTableName)) {
-            try {
-                leftValue = entry1.get(leftStatementFieldName);
-
-            } catch (Exception e) {
-                System.out.println("There's no " + leftStatementFieldName + " column on the " + this.firstTableName + " table.");
-                throw new RuntimeException(e);
-            }
-        } else if (Objects.equals(leftStatementTableName, this.secondTableName)) {
-            try {
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-                // unknown column name
-            }
-        } else {
-            // unexistent table;
-        }
-
-
-        return true;
-    }
 
     public static Integer tryParseInt(String value) {
         try {
@@ -125,14 +86,63 @@ public class QueryExecutor {
         }
     }
 
-//    public Object getValueForWHERECondition(LinkedHashMap<String, Object> entry1, LinkedHashMap<String, Object> entry2, String argument) {
-//        Integer number = tryParseInt(argument);
-//        if (number != null) {
-//            return number;
-//        } else if (argument.charAt(0) == '\"' && argument.charAt(argument.length() - 1) == '\"' || argument.charAt(0) == '\'' && argument.charAt(argument.length() - 1) == '\'') {
-//            return argument;
-//        } else if (argument.)
-//    }
+    public Object parseWHEREArgument(String argument, LinkedHashMap<String, Object> entry1, LinkedHashMap<String, Object> entry2) {
+        // check for a number
+        Integer number = tryParseInt(argument);
+        if (number != null) return number;
+
+        // check for a String
+        if (argument.charAt(0) == '\"' && argument.charAt(argument.length() - 1) == '\"' || argument.charAt(0) == '\'' && argument.charAt(argument.length() - 1) == '\'') {
+            //return argument minus the quotes
+            return argument.substring(1, argument.length() - 1);
+        }
+
+        // check for format 'table.field'
+        String[] parts = argument.split("\\.");
+        if (parts.length == 2) {
+            String table = parts[0];
+            String field = parts[1];
+
+            if (Objects.equals(table, this.firstTableName)) {
+                if (Arrays.asList(this.table1Headers).contains(field)) {
+                    System.out.printf("value1: %s\n", entry1.get(field));
+                    return entry1.get(field);
+                } else {
+                    System.out.println("Non-existent column name");
+                    return null;
+                }
+            } else {
+                System.out.println("Non-existent table name");
+                return null;
+            }
+        }
+        return null;
+    }
+
+
+    public Boolean doWHERE(LinkedHashMap<String, Object> table1, LinkedHashMap<String, Object> table2) {
+        if (queriesMap.get("WHERE") != null) {
+
+            Object left = parseWHEREArgument(this.WHEREArgs[0], table1, table2); // this checks for formats: table.field, 'String' or Integer and return the value ready to be passed to function
+            Object right = parseWHEREArgument(this.WHEREArgs[2], table1, table2);
+            String operator = this.WHEREArgs[1];
+
+            BiFunction<Object, Object, Boolean> fn = whereOperations.get(operator);
+            System.out.println("Function for Where: " + operator);
+            System.out.println("left: " + left);
+            System.out.printf("right: %s\n", right);
+
+            if (fn != null) {
+                System.out.println("function is not null");
+                return fn.apply(left, right);
+            } else {
+                System.out.println("Wrong operator passed to WHERE");
+                return null;
+            }
+        }
+        return null;
+    }
+
 
 
     // getField gets the fields when passed the whole argument string, like "movies.director_id = directors.id"
@@ -166,10 +176,6 @@ public class QueryExecutor {
                     String ONTable1Field = getField(ONConditionAsString, this.firstTableName);
                     String ONTable2Field = getField(ONConditionAsString, this.secondTableName);
                     System.out.println("ONConditionAsString: " + ONConditionAsString);
-                    // Boolean where
-
-                    System.out.println("field1: " + ONTable1Field);
-                    System.out.println("field2: " + ONTable2Field);
 
                     resultsTable = getSelectWithJoin(table1, table2, ONTable1Field, ONTable2Field);
 
@@ -190,7 +196,8 @@ public class QueryExecutor {
     }
 
 
-    public void doSELECT(LinkedHashMap<String, Object> entry, String tableName, String[] SELECTArgs, LinkedHashMap<String, Object> newEntry) {
+    public void doSELECT(LinkedHashMap<String, Object> entry, String tableName, String[]
+            SELECTArgs, LinkedHashMap<String, Object> newEntry) {
 
 //        System.out.println("selectArgs: " + Arrays.toString(SELECTArgs));
 //        System.out.println("tableNAme: " + tableName);
@@ -219,30 +226,23 @@ public class QueryExecutor {
                     field1, String field2) {
         List<LinkedHashMap<String, Object>> resultsTable = new ArrayList<>();
         LinkedHashMap<String, Object> newEntry = new LinkedHashMap<>();
-        System.out.println("SelectArgs: " + Arrays.toString(SELECTArgs));
-//        String[] SELECTArgs = (String[]) this.queriesMap.get("SELECT");
-//        Object[] WHEREArgs = (Object[]) this.queriesMap.get("WHERE");
-
-//        if (WHEREArgs != null) {
-//            try {
-//                Object left = WHEREArgs[0];
-//                Object right = WHEREArgs[2];
-//                Object operator = WHEREArgs[1];
-//                BiFunction<Object, Object, Boolean> fn = whereOperations.get(operator);
-//            } catch (Exception e) {
-//                System.out.println("Invalid WHERE condition");
-//
-//            }
 
         for (LinkedHashMap<String, Object> entry1 : table1) {
             for (LinkedHashMap<String, Object> entry2 : table2) {
                 if (entry2.get(field2).equals(entry1.get(field1))) {   // (entry1[field1] == entry2[field2])  movies.director_id = directors.id; JOIN
-                    // handle where here
-//                        if (WHEREArgs != null && fn(left, right) == true) {
-                    doSELECT(entry1, firstTableName, SELECTArgs, newEntry);
-                    doSELECT(entry2, secondTableName, SELECTArgs, newEntry);
-                    resultsTable.add(newEntry);
-
+                    // handle WHERE
+                    if (this.WHEREArgs != null) {
+                        if (doWHERE(entry1, entry2)) {
+                            System.out.println("Match found on WHERE condition");
+                            doSELECT(entry1, firstTableName, SELECTArgs, newEntry);
+                            doSELECT(entry2, secondTableName, SELECTArgs, newEntry);
+                            resultsTable.add(newEntry);
+                        }
+                    } else {
+                        doSELECT(entry1, firstTableName, SELECTArgs, newEntry);
+                        doSELECT(entry2, secondTableName, SELECTArgs, newEntry);
+                        resultsTable.add(newEntry);
+                    }
                 }
 
             }
