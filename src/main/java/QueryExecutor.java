@@ -20,7 +20,6 @@ public class QueryExecutor {
     Map<String, BiFunction<Object, Object, Boolean>> whereOperations = new HashMap<>();
     CSVTable csvTable1 = new CSVTable();
     CSVTable csvTable2 = new CSVTable();
-    // CSVTable csvTable2;
 
     public QueryExecutor(HashMap<String, Object> queriesMap, ArrayList<String> queryArr) {
         csvTable1.createTableFromCSV((String) queriesMap.get("FROM"));
@@ -51,9 +50,8 @@ public class QueryExecutor {
         this.firstTableName = extractTableName((String) this.queriesMap.get("FROM")); // remove .csv from tableName.csv
         this.secondTableName = extractTableName((String) this.queriesMap.get("JOIN"));  // remove .csv from tableName.csv
         this.WHEREArgs = (queriesMap.get("WHERE") != null && !((ArrayList<String>) queriesMap.get("WHERE")).isEmpty()) ? (ArrayList<String>) queriesMap.get("WHERE") : null;
-        //System.out.println("WHEREArgs: " + WHEREArgs);
         this.SELECTArgs = queriesMap.get("SELECT") != null ? (ArrayList<String>) this.queriesMap.get("SELECT") : null;
-        // System.out.printf("SELECTArgs: %s\n", SELECTArgs);
+
 
         addWhereOperation("=", (left, right) -> compare(left, right) == 0);
         addWhereOperation("!=", (left, right) -> compare(left, right) != 0);
@@ -75,7 +73,7 @@ public class QueryExecutor {
             //return ((Integer) left).compareTo((Integer) right);
             return Integer.compare(Integer.parseInt((String) left), (Integer) right);
         } else if (left instanceof String && right instanceof Integer) {
-            return ((String) left).compareTo(String.valueOf(right));
+            return Integer.compare(Integer.parseInt((String) left), (Integer) right);
         } else if (left instanceof Integer && right instanceof String) {
             return Integer.compare((Integer) left, Integer.parseInt((String) right));
         } else {
@@ -120,6 +118,8 @@ public class QueryExecutor {
 
     public Object parseWHEREArgument(String argument, LinkedHashMap<String, Object> entry1, LinkedHashMap<String, Object> entry2) {
         // check for a number
+//        System.out.println("argument: " + argument + " entry1: " + entry1 + " entry2: " + entry2);
+
         Integer number = tryParseInt(argument);
         if (number != null) return number;
 
@@ -284,6 +284,7 @@ public class QueryExecutor {
                 if (entry2.get(field2).equals(entry1.get(field1))) {   // (entry1[field1] == entry2[field2])  movies.director_id = directors.id; JOIN
                     // handle WHERE
                     if (this.WHEREArgs != null && !this.WHEREArgs.isEmpty()) {
+
                         if (doWHERE(entry1, entry2)) {
                             doSELECT(entry1, firstTableName, SELECTArgs, newEntry);
                             doSELECT(entry2, secondTableName, SELECTArgs, newEntry);
@@ -301,6 +302,15 @@ public class QueryExecutor {
         }
 
         return resultsTable;
+    }
+
+    public void formatResultsTable(List<LinkedHashMap<String, Object>> resultsTable) {
+        for (LinkedHashMap<String, Object> entry : resultsTable) {
+            for (Map.Entry<String, Object> field : entry.entrySet()) {
+                System.out.printf("%s: %s\n", field.getKey(), field.getValue());
+            }
+            System.out.println();
+        }
     }
 
 }

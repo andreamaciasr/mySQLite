@@ -45,6 +45,9 @@ public class QueryParser {
         // replace commas with spaces
         query = query.replace(",", " ");
 
+        // replace curly quotes with straight quotes
+        query = query.replace("“", "\"").replace("”", "\"");
+
         // split by spaces, ignore spaces within quotes
         String regex = "\"([^\"]*)\"|'([^']*)'|\\S+";
         Pattern pattern = Pattern.compile(regex);
