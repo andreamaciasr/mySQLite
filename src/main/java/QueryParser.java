@@ -11,8 +11,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class QueryParser {
 
     HashMap<String, Object> queries;
-    //final String[] allQueriesAvailable = {"SELECT", "INSERT INTO", "VALUES", "UPDATE", "SET", "DELETE", "FROM", "WHERE", "JOIN", "ON"};
-    private ArrayList<String> tokens;
+    public ArrayList<String> tokens;
 
     public QueryParser() {
         queries = new HashMap<>();
@@ -27,7 +26,9 @@ public class QueryParser {
         queries.put("JOIN", "");
         queries.put("ON", new ArrayList<String>()); // movies.director_id = directors.id
 
+
     }
+
 
     public String getUserQueryFromCLI() {
         System.out.println("Enter a query: ");
@@ -79,19 +80,19 @@ public class QueryParser {
     }
 
     public void getMiddleArgs(int start, int end, String keyword) {
+        // when argument is a String
         if (keyword.equals("INSERT INTO") || keyword.equals("FROM") || keyword.equals("JOIN")) {
             this.queries.put(keyword, this.tokens.get(start + 1));
-//            System.out.println(queries);
-        } else {
+        } else { // when argument is an array
             ArrayList<String> args = new ArrayList<>();
             for (int i = start + 1; i < end; i++) {
                 args.add(this.tokens.get(i));
             }
-            System.out.println(args);
-            System.out.println(queries);
             ((ArrayList<String>) this.queries.get(keyword)).addAll(args);
         }
     }
+
+
 
     public void extractArguments(ArrayList<Pair<String, Integer>> tokenPairs) {
         for (int i = 0; i < tokenPairs.size() - 1; i++) {
@@ -112,10 +113,10 @@ public class QueryParser {
         parser.tokens = parser.makeArrayQuery(query);
         System.out.println(parser.tokens);
         ArrayList<Pair<String, Integer>> pairsArray = parser.makeTokenPairList();
-        System.out.println(pairsArray);
         parser.extractArguments(pairsArray);
         System.out.println(parser.queries);
     }
+
 
 
 
