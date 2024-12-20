@@ -19,18 +19,30 @@ public class QueryExecutor {
     final String[] table2Headers;
     Map<String, BiFunction<Object, Object, Boolean>> whereOperations = new HashMap<>();
     CSVTable csvTable1 = new CSVTable();
-  //  CSVTable csvTable2 = new CSVTable();
-  CSVTable csvTable2;
+    CSVTable csvTable2 = new CSVTable();
+    // CSVTable csvTable2;
 
     public QueryExecutor(HashMap<String, Object> queriesMap, ArrayList<String> queryArr) {
         csvTable1.createTableFromCSV((String) queriesMap.get("FROM"));
         this.table1 = csvTable1.getTable();
         this.table1Headers = csvTable1.getColumnsNames();
 
-        //csvTable2.createTableFromCSV((String) queriesMap.get("JOIN"));
-        this.csvTable2 = !((String) queriesMap.get("JOIN")).isEmpty() ? new CSVTable() : null;
-        this.table2 = csvTable2 != null ? csvTable2.getTable() : null;
-        this.table2Headers = csvTable2 != null ? csvTable2.getColumnsNames() : null;
+//        csvTable2.createTableFromCSV((String) queriesMap.get("JOIN"));
+//        //this.csvTable2 = !((String) queriesMap.get("JOIN")).isEmpty() ? new CSVTable() : null;
+//        this.table2 = csvTable2 != null ? csvTable2.getTable() : null;
+//        System.out.println("table2: " + table2);
+//        System.out.println("table1: " + table1);
+//        this.table2Headers = csvTable2 != null ? csvTable2.getColumnsNames() : null;
+
+        String joinFilePath = (String) queriesMap.get("JOIN");
+        if (joinFilePath != null && !joinFilePath.isEmpty()) {
+            csvTable2.createTableFromCSV(joinFilePath);
+            this.table2 = csvTable2.getTable();
+            this.table2Headers = csvTable2.getColumnsNames();
+        } else {
+            this.table2 = new ArrayList<>();
+            this.table2Headers = new String[0];
+        }
 
         QueryParser parser = new QueryParser();
         this.queriesMap = queriesMap;
@@ -41,7 +53,7 @@ public class QueryExecutor {
         this.WHEREArgs = (queriesMap.get("WHERE") != null && !((ArrayList<String>) queriesMap.get("WHERE")).isEmpty()) ? (ArrayList<String>) queriesMap.get("WHERE") : null;
         //System.out.println("WHEREArgs: " + WHEREArgs);
         this.SELECTArgs = queriesMap.get("SELECT") != null ? (ArrayList<String>) this.queriesMap.get("SELECT") : null;
-       // System.out.printf("SELECTArgs: %s\n", SELECTArgs);
+        // System.out.printf("SELECTArgs: %s\n", SELECTArgs);
 
         addWhereOperation("=", (left, right) -> compare(left, right) == 0);
         addWhereOperation("!=", (left, right) -> compare(left, right) != 0);
@@ -60,14 +72,14 @@ public class QueryExecutor {
         if (left instanceof String && right instanceof String) {
             return ((String) left).compareTo((String) right);
         } else if (left instanceof Integer && right instanceof Integer) {
-            return ((Integer) left).compareTo((Integer) right);
+            //return ((Integer) left).compareTo((Integer) right);
+            return Integer.compare(Integer.parseInt((String) left), (Integer) right);
         } else if (left instanceof String && right instanceof Integer) {
             return ((String) left).compareTo(String.valueOf(right));
         } else if (left instanceof Integer && right instanceof String) {
             return Integer.compare((Integer) left, Integer.parseInt((String) right));
         } else {
             throw new IllegalArgumentException("Unsupported types on WHERE condition");
-
         }
     }
 
@@ -93,6 +105,7 @@ public class QueryExecutor {
 
     public Object processTableField(LinkedHashMap<String, Object> entry, String field, String[] tableHeaders) {
         if (Arrays.asList(tableHeaders).contains(field)) {
+            // System.out.println("field: " + entry.get(field));
             return entry.get(field);
         } else {
             System.out.println("Non-existent column name");
@@ -123,12 +136,13 @@ public class QueryExecutor {
             String field = parts[1];
 
             if (table.equals(firstTableName)) {
+                //System.out.println("processTableField(entry1, field, table1Headers): " + processTableField(entry1, field, table1Headers));
                 return processTableField(entry1, field, table1Headers);
             } else if (table.equals(secondTableName)) {
                 return processTableField(entry2, field, table2Headers);
             } else {
                 System.out.println("Table not found");
-                return null;
+                System.exit(1);
             }
 
         }
@@ -146,10 +160,11 @@ public class QueryExecutor {
             BiFunction<Object, Object, Boolean> fn = whereOperations.get(operator);
 
             if (fn != null) {
+                // System.out.println("left: " + left + " right: " + right);
                 return fn.apply(left, right);
             } else {
                 System.out.println("Wrong operator passed to WHERE");
-                return null;
+                System.exit(1);
             }
         }
         return null;
@@ -157,7 +172,7 @@ public class QueryExecutor {
     }
 
 
-    /// / getField gets the fields when passed the whole argument string, like "movies.director_id = directors.id"
+    // getField gets the fields when passed the whole argument string, like "movies.director_id = directors.id"
     public String getField(ArrayList<String> conditionStrings, String tableName) {
         String conditionString = String.join(" ", conditionStrings);
         String regex = tableName + "\\.(\\w+)";
@@ -187,7 +202,7 @@ public class QueryExecutor {
             case "SELECT" -> {
                 if (queriesMap.get("JOIN") != "") {
                     ArrayList<String> ONConditionAsString = (ArrayList<String>) this.queriesMap.get("ON");// "movies.director_id = directors.id"
-                    System.out.printf("ONConditionAsString: %s\n", ONConditionAsString);
+                    //System.out.printf("ONConditionAsString: %s\n", ONConditionAsString);
                     String ONTable1Field = getField(ONConditionAsString, this.firstTableName);
                     String ONTable2Field = getField(ONConditionAsString, this.secondTableName);
 //                    System.out.println("field1: " + ONTable1Field);
@@ -216,6 +231,10 @@ public class QueryExecutor {
 
     public void doSELECT(LinkedHashMap<String, Object> entry, String tableName, ArrayList<String>
             SELECTArgs, LinkedHashMap<String, Object> newEntry) {
+        if (Objects.equals(SELECTArgs.getFirst(), "*")) {
+            newEntry.putAll(entry);
+            return;
+        }
         for (String arg : SELECTArgs) { // SELECT movies.name, directors.name
             // regex to divide table and field from table.field
             String table = removeEverythingAfterDot(arg); // movies
