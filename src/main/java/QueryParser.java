@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -25,10 +24,7 @@ public class QueryParser {
         queries.put("WHERE", new ArrayList<String>());
         queries.put("JOIN", "");
         queries.put("ON", new ArrayList<String>()); // movies.director_id = directors.id
-
-
     }
-
 
     public String getUserQueryFromCLI() {
         System.out.println("Enter a query: ");
@@ -66,11 +62,6 @@ public class QueryParser {
         return tokens;
     }
 
-
-    public HashMap<String, Object> getQueries() {
-        return queries;
-    }
-
     public ArrayList<Pair<String, Integer>> makeTokenPairList() {
         ArrayList<Pair<String, Integer>> tokenPairs = new ArrayList<>();
         for (int i = 0; i < this.tokens.size(); i++) {
@@ -95,8 +86,6 @@ public class QueryParser {
         }
     }
 
-
-
     public void extractArguments(ArrayList<Pair<String, Integer>> tokenPairs) {
         for (int i = 0; i < tokenPairs.size() - 1; i++) {
             String keyword = tokenPairs.get(i).getLeft();
@@ -107,22 +96,14 @@ public class QueryParser {
         getMiddleArgs(tokenPairs.getLast().getRight(), this.tokens.size(), keyword);
     }
 
-
-
     public static void main(String[] args) {
-       // String query = "SELECT movies.name FROM movies JOIN directors ON movies.director_id = directors.id WHERE directors.name = 'Greta Gerwig'";
         QueryParser parser = new QueryParser();
         String query = parser.getUserQueryFromCLI();
         parser.tokens = parser.makeArrayQuery(query);
-        System.out.println(parser.tokens);
+        //System.out.println(parser.tokens);
         ArrayList<Pair<String, Integer>> pairsArray = parser.makeTokenPairList();
         parser.extractArguments(pairsArray);
-        System.out.println(parser.queries);
+        //System.out.println(parser.queries);
     }
-
-
-
-
-
 
 }

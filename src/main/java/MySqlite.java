@@ -26,12 +26,9 @@ public class MySqlite {
         ArrayList<Pair<String, Integer>> pairsArray = parser.makeTokenPairList();
         parser.extractArguments(pairsArray);
         HashMap<String, Object> queriesMap = parser.queries;
-        System.out.println("queriesMap: " + queriesMap);
         QueryExecutor queryExecutor = new QueryExecutor(queriesMap, parser.tokens);
         List<LinkedHashMap<String, Object>> resultsTable = queryExecutor.runQueryViaFirstCommand();
         queryExecutor.formatResultsTable(resultsTable);
-
-        System.out.println(resultsTable);
     }
 
 }

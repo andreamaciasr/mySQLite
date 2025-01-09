@@ -26,13 +26,6 @@ public class QueryExecutor {
         this.table1 = csvTable1.getTable();
         this.table1Headers = csvTable1.getColumnsNames();
 
-//        csvTable2.createTableFromCSV((String) queriesMap.get("JOIN"));
-//        //this.csvTable2 = !((String) queriesMap.get("JOIN")).isEmpty() ? new CSVTable() : null;
-//        this.table2 = csvTable2 != null ? csvTable2.getTable() : null;
-//        System.out.println("table2: " + table2);
-//        System.out.println("table1: " + table1);
-//        this.table2Headers = csvTable2 != null ? csvTable2.getColumnsNames() : null;
-
         String joinFilePath = (String) queriesMap.get("JOIN");
         if (joinFilePath != null && !joinFilePath.isEmpty()) {
             csvTable2.createTableFromCSV(joinFilePath);
@@ -43,7 +36,7 @@ public class QueryExecutor {
             this.table2Headers = new String[0];
         }
 
-        QueryParser parser = new QueryParser();
+        //QueryParser parser = new QueryParser();
         this.queriesMap = queriesMap;
         this.queryArr = queryArr;
         this.firstCommand = queryArr.getFirst();
@@ -67,20 +60,15 @@ public class QueryExecutor {
     }
 
     private int compare(Object left, Object right) {
-        if (left instanceof String && right instanceof String) {
-            return ((String) left).compareTo((String) right);
-        } else if (left instanceof Integer && right instanceof Integer) {
-            //return ((Integer) left).compareTo((Integer) right);
-            return Integer.compare(Integer.parseInt((String) left), (Integer) right);
-        } else if (left instanceof String && right instanceof Integer) {
-            return Integer.compare(Integer.parseInt((String) left), (Integer) right);
-        } else if (left instanceof Integer && right instanceof String) {
-            return Integer.compare((Integer) left, Integer.parseInt((String) right));
-        } else {
-            throw new IllegalArgumentException("Unsupported types on WHERE condition");
-        }
+        return switch (left) {
+            case String s when right instanceof String -> s.compareTo((String) right);
+            case Integer i when right instanceof Integer ->
+                    Integer.compare(Integer.parseInt((String) left), (Integer) right);
+            case String s when right instanceof Integer -> Integer.compare(Integer.parseInt(s), (Integer) right);
+            case Integer i when right instanceof String -> Integer.compare(i, Integer.parseInt((String) right));
+            case null, default -> throw new IllegalArgumentException("Unsupported types on WHERE condition");
+        };
     }
-
 
     public String extractTableName(String filePath) {
         String regex = ".*/(.*?)\\.csv$|^(.*?)\\.csv$";
@@ -92,18 +80,16 @@ public class QueryExecutor {
         return null;
     }
 
-
     public static Integer tryParseInt(String value) {
         try {
-            return Integer.parseInt(value); // Return the parsed integer
+            return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            return null; // Return null if parsing fails
+            return null;
         }
     }
 
     public Object processTableField(LinkedHashMap<String, Object> entry, String field, String[] tableHeaders) {
         if (Arrays.asList(tableHeaders).contains(field)) {
-            // System.out.println("field: " + entry.get(field));
             return entry.get(field);
         } else {
             System.out.println("Non-existent column name");
@@ -117,8 +103,6 @@ public class QueryExecutor {
     }
 
     public Object parseWHEREArgument(String argument, LinkedHashMap<String, Object> entry1, LinkedHashMap<String, Object> entry2) {
-        // check for a number
-//        System.out.println("argument: " + argument + " entry1: " + entry1 + " entry2: " + entry2);
 
         Integer number = tryParseInt(argument);
         if (number != null) return number;
@@ -144,7 +128,6 @@ public class QueryExecutor {
                 System.out.println("Table not found");
                 System.exit(1);
             }
-
         }
         return null;
     }
@@ -160,7 +143,6 @@ public class QueryExecutor {
             BiFunction<Object, Object, Boolean> fn = whereOperations.get(operator);
 
             if (fn != null) {
-                // System.out.println("left: " + left + " right: " + right);
                 return fn.apply(left, right);
             } else {
                 System.out.println("Wrong operator passed to WHERE");
@@ -168,7 +150,6 @@ public class QueryExecutor {
             }
         }
         return null;
-        // return false;
     }
 
 
@@ -202,11 +183,8 @@ public class QueryExecutor {
             case "SELECT" -> {
                 if (queriesMap.get("JOIN") != "") {
                     ArrayList<String> ONConditionAsString = (ArrayList<String>) this.queriesMap.get("ON");// "movies.director_id = directors.id"
-                    //System.out.printf("ONConditionAsString: %s\n", ONConditionAsString);
                     String ONTable1Field = getField(ONConditionAsString, this.firstTableName);
                     String ONTable2Field = getField(ONConditionAsString, this.secondTableName);
-//                    System.out.println("field1: " + ONTable1Field);
-//                    System.out.printf("field2: %s\n", ONTable2Field);
 
                     resultsTable = getSelectWithJoin(table1, table2, ONTable1Field, ONTable2Field);
 
@@ -300,7 +278,6 @@ public class QueryExecutor {
             }
             newEntry = new LinkedHashMap<>();
         }
-
         return resultsTable;
     }
 
