@@ -5,23 +5,32 @@ import java.util.regex.Pattern;
 
 public class QueryExecutor {
 
-    final List<LinkedHashMap<String, Object>> table1;
-    final List<LinkedHashMap<String, Object>> table2;
+    List<LinkedHashMap<String, Object>> table1;
+    List<LinkedHashMap<String, Object>> table2;
     final HashMap<String, Object> queriesMap;
     final ArrayList<String> queryArr;
-    final String firstCommand;
-    final String firstTableName;
-    final String secondTableName;
-    final ArrayList<String> WHEREArgs;
-    final ArrayList<String> SELECTArgs;
+    String firstCommand;
+    String firstTableName;
+    String secondTableName;
+    ArrayList<String> WHEREArgs;
+    ArrayList<String> SELECTArgs;
 
-    final String[] table1Headers;
-    final String[] table2Headers;
+    String[] table1Headers;
+    String[] table2Headers;
     Map<String, BiFunction<Object, Object, Boolean>> whereOperations = new HashMap<>();
     CSVTable csvTable1 = new CSVTable();
     CSVTable csvTable2 = new CSVTable();
 
     public QueryExecutor(HashMap<String, Object> queriesMap, ArrayList<String> queryArr) {
+        this.queriesMap = queriesMap;
+        this.queryArr = queryArr;
+
+        initializeTables();
+        initializeQueryFields();
+        initializeWhereOperations();
+    }
+
+    private void initializeTables() {
         csvTable1.createTableFromCSV((String) queriesMap.get("FROM"));
         this.table1 = csvTable1.getTable();
         this.table1Headers = csvTable1.getColumnsNames();
@@ -35,24 +44,27 @@ public class QueryExecutor {
             this.table2 = new ArrayList<>();
             this.table2Headers = new String[0];
         }
+    }
 
-        //QueryParser parser = new QueryParser();
-        this.queriesMap = queriesMap;
-        this.queryArr = queryArr;
+    private void initializeQueryFields() {
         this.firstCommand = queryArr.getFirst();
-        this.firstTableName = extractTableName((String) this.queriesMap.get("FROM")); // remove .csv from tableName.csv
-        this.secondTableName = extractTableName((String) this.queriesMap.get("JOIN"));  // remove .csv from tableName.csv
-        this.WHEREArgs = (queriesMap.get("WHERE") != null && !((ArrayList<String>) queriesMap.get("WHERE")).isEmpty()) ? (ArrayList<String>) queriesMap.get("WHERE") : null;
-        this.SELECTArgs = queriesMap.get("SELECT") != null ? (ArrayList<String>) this.queriesMap.get("SELECT") : null;
+        this.firstTableName = extractTableName((String) this.queriesMap.get("FROM"));
+        this.secondTableName = extractTableName((String) this.queriesMap.get("JOIN"));
+        this.WHEREArgs = (queriesMap.get("WHERE") != null && !((ArrayList<String>) queriesMap.get("WHERE")).isEmpty())
+                ? (ArrayList<String>) queriesMap.get("WHERE")
+                : null;
+        this.SELECTArgs = queriesMap.get("SELECT") != null
+                ? (ArrayList<String>) this.queriesMap.get("SELECT")
+                : null;
+    }
 
-
+    private void initializeWhereOperations() {
         addWhereOperation("=", (left, right) -> compare(left, right) == 0);
         addWhereOperation("!=", (left, right) -> compare(left, right) != 0);
         addWhereOperation("<", (left, right) -> compare(left, right) < 0);
         addWhereOperation(">", (left, right) -> compare(left, right) > 0);
         addWhereOperation("<=", (left, right) -> compare(left, right) <= 0);
         addWhereOperation(">=", (left, right) -> compare(left, right) >= 0);
-
     }
 
     private void addWhereOperation(String operator, BiFunction<Object, Object, Boolean> function) {
@@ -288,6 +300,11 @@ public class QueryExecutor {
             }
             System.out.println();
         }
+    }
+
+    public void getResultsTable() {
+        List<LinkedHashMap<String, Object>> resultsTable = runQueryViaFirstCommand();
+        formatResultsTable(resultsTable);
     }
 
 }

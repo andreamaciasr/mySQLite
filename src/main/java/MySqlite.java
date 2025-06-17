@@ -16,19 +16,12 @@ public class MySqlite {
     public static void main(String[] args) {
         MySqlite mySqlite = new MySqlite();
         mySqlite.run();
-
     }
 
     public void run() {
         QueryParser parser = new QueryParser();
-        String query = parser.getUserQueryFromCLI();
-        parser.tokens = parser.makeArrayQuery(query);
-        ArrayList<Pair<String, Integer>> pairsArray = parser.makeTokenPairList();
-        parser.extractArguments(pairsArray);
-        HashMap<String, Object> queriesMap = parser.queries;
-        QueryExecutor queryExecutor = new QueryExecutor(queriesMap, parser.tokens);
-        List<LinkedHashMap<String, Object>> resultsTable = queryExecutor.runQueryViaFirstCommand();
-        queryExecutor.formatResultsTable(resultsTable);
+        parser.parseQuery();
+        QueryExecutor queryExecutor = new QueryExecutor(parser.queries, parser.tokens);
+        queryExecutor.getResultsTable();
     }
-
 }

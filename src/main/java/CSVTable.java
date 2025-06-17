@@ -39,9 +39,4 @@ public class CSVTable {
     public List<LinkedHashMap<String, Object>> getTable() { // select *
         return table;
     }
-
-//    public CSVTable getTableWithJoin(CSVTable table2, String on) {
-//        //
-//        return table;
-//    }
 }

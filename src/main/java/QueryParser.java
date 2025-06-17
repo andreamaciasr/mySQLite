@@ -64,6 +64,7 @@ public class QueryParser {
 
     public ArrayList<Pair<String, Integer>> makeTokenPairList() {
         ArrayList<Pair<String, Integer>> tokenPairs = new ArrayList<>();
+        System.out.println("Tokens: " + this.tokens);
         for (int i = 0; i < this.tokens.size(); i++) {
             if (this.queries.get(this.tokens.get(i)) != null) {
                 MutablePair<String, Integer> pair = new MutablePair<>(this.tokens.get(i), i);
@@ -96,14 +97,21 @@ public class QueryParser {
         getMiddleArgs(tokenPairs.getLast().getRight(), this.tokens.size(), keyword);
     }
 
-    public static void main(String[] args) {
-        QueryParser parser = new QueryParser();
-        String query = parser.getUserQueryFromCLI();
-        parser.tokens = parser.makeArrayQuery(query);
-        //System.out.println(parser.tokens);
-        ArrayList<Pair<String, Integer>> pairsArray = parser.makeTokenPairList();
-        parser.extractArguments(pairsArray);
-        //System.out.println(parser.queries);
+    public void parseQuery() {
+        String query = getUserQueryFromCLI();
+        this.tokens = makeArrayQuery(query);
+        ArrayList<Pair<String, Integer>> pairsArray = makeTokenPairList();
+        extractArguments(pairsArray);
     }
+
+//    public static void main(String[] args) {
+//        QueryParser parser = new QueryParser();
+//        String query = parser.getUserQueryFromCLI();
+//        parser.tokens = parser.makeArrayQuery(query);
+//        //System.out.println(parser.tokens);
+//        ArrayList<Pair<String, Integer>> pairsArray = parser.makeTokenPairList();
+//        parser.extractArguments(pairsArray);
+//        //System.out.println(parser.queries);
+//    }
 
 }
