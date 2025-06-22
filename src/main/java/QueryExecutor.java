@@ -100,9 +100,9 @@ public class QueryExecutor {
         }
     }
 
-    public Object processTableField(LinkedHashMap<String, Object> entry, String field, String[] tableHeaders) {
-        if (Arrays.asList(tableHeaders).contains(field)) {
-            return entry.get(field);
+    public Object getColumnValueForWHEREOperation(LinkedHashMap<String, Object> row, String column, String[] tableHeaders) {
+        if (Arrays.asList(tableHeaders).contains(column)) {
+            return row.get(column);
         } else {
             System.out.println("Non-existent column name");
             return null;
@@ -114,7 +114,7 @@ public class QueryExecutor {
                 (str.startsWith("'") && str.endsWith("'"));
     }
 
-    public Object parseWHEREArgument(String argument, LinkedHashMap<String, Object> entry1, LinkedHashMap<String, Object> entry2) {
+    public Object parseWHEREArgument(String argument, LinkedHashMap<String, Object> row1, LinkedHashMap<String, Object> row2) {
 
         Integer number = tryParseInt(argument);
         if (number != null) return number;
@@ -129,13 +129,12 @@ public class QueryExecutor {
         String[] parts = argument.split("\\.");
         if (parts.length == 2) {
             String table = parts[0];
-            String field = parts[1];
+            String column = parts[1];
 
             if (table.equals(firstTableName)) {
-                //System.out.println("processTableField(entry1, field, table1Headers): " + processTableField(entry1, field, table1Headers));
-                return processTableField(entry1, field, table1Headers);
+                return getColumnValueForWHEREOperation(row1, column, table1Headers);
             } else if (table.equals(secondTableName)) {
-                return processTableField(entry2, field, table2Headers);
+                return getColumnValueForWHEREOperation(row2, column, table2Headers);
             } else {
                 System.out.println("Table not found");
                 System.exit(1);
@@ -219,25 +218,25 @@ public class QueryExecutor {
     }
 
 
-    public void doSELECT(LinkedHashMap<String, Object> entry, String tableName, ArrayList<String>
-            SELECTArgs, LinkedHashMap<String, Object> newEntry) {
+    public void doSELECT(LinkedHashMap<String, Object> row, String tableName, ArrayList<String>
+            SELECTArgs, LinkedHashMap<String, Object> newRow) {
         if (Objects.equals(SELECTArgs.getFirst(), "*")) {
-            newEntry.putAll(entry);
+            newRow.putAll(row);
             return;
         }
         for (String arg : SELECTArgs) { // SELECT movies.name, directors.name
-            // regex to divide table and field from table.field
+            // regex to divide table and column from table.column
             String table = removeEverythingAfterDot(arg); // movies
-            String field = removeEverythingBeforeDot(arg); // title
+            String column = removeEverythingBeforeDot(arg); // title
 
             if (Objects.equals(table, tableName)) {
-                // extract value from the field on the entry
-                Object value = entry.get(field); // {title: "something", release_year: "1998", director: something, id: 1}
-                if (newEntry.containsKey(field)) {
+                // extract value from the column on the row
+                Object value = row.get(column); // {title: "something", release_year: "1998", director: something, id: 1}
+                if (newRow.containsKey(column)) {
                     // pass arg that contains the tableName to create unique keys
-                    newEntry.put(arg, value);
+                    newRow.put(arg, value);
                 } else {
-                    newEntry.put(field, value);
+                    newRow.put(column, value);
                 }
 
             }
@@ -265,28 +264,26 @@ public class QueryExecutor {
 
     public List<LinkedHashMap<String, Object>> getSelectWithJoin
             (List<LinkedHashMap<String, Object>> table1, List<LinkedHashMap<String, Object>> table2, String
-                    field1, String field2) {
+                    column1, String column2) {
         List<LinkedHashMap<String, Object>> resultsTable = new ArrayList<>();
         LinkedHashMap<String, Object> newEntry = new LinkedHashMap<>();
 
-        for (LinkedHashMap<String, Object> entry1 : table1) {
-            for (LinkedHashMap<String, Object> entry2 : table2) {
-                if (entry2.get(field2).equals(entry1.get(field1))) {   // (entry1[field1] == entry2[field2])  movies.director_id = directors.id; JOIN
-                    // handle WHERE
+        for (LinkedHashMap<String, Object> row1 : table1) {
+            for (LinkedHashMap<String, Object> row2 : table2) {
+                if (row2.get(column2).equals(row1.get(column1))) {   // (row1[column1] == row2[column2])
                     if (this.WHEREArgs != null && !this.WHEREArgs.isEmpty()) {
 
-                        if (doWHERE(entry1, entry2)) {
-                            doSELECT(entry1, firstTableName, SELECTArgs, newEntry);
-                            doSELECT(entry2, secondTableName, SELECTArgs, newEntry);
+                        if (doWHERE(row1, row2)) {
+                            doSELECT(row1, firstTableName, SELECTArgs, newEntry);
+                            doSELECT(row2, secondTableName, SELECTArgs, newEntry);
                             resultsTable.add(newEntry);
                         }
                     } else {
-                        doSELECT(entry1, firstTableName, SELECTArgs, newEntry);
-                        doSELECT(entry2, secondTableName, SELECTArgs, newEntry);
+                        doSELECT(row1, firstTableName, SELECTArgs, newEntry);
+                        doSELECT(row2, secondTableName, SELECTArgs, newEntry);
                         resultsTable.add(newEntry);
                     }
                 }
-
             }
             newEntry = new LinkedHashMap<>();
         }

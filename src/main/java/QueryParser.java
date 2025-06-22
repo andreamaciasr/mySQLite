@@ -64,7 +64,6 @@ public class QueryParser {
 
     public ArrayList<Pair<String, Integer>> makeTokenPairList() {
         ArrayList<Pair<String, Integer>> tokenPairs = new ArrayList<>();
-        System.out.println("Tokens: " + this.tokens);
         for (int i = 0; i < this.tokens.size(); i++) {
             if (this.queries.get(this.tokens.get(i)) != null) {
                 MutablePair<String, Integer> pair = new MutablePair<>(this.tokens.get(i), i);
@@ -75,10 +74,10 @@ public class QueryParser {
     }
 
     public void getMiddleArgs(int start, int end, String keyword) {
-        // when argument is a String
+        // when a single value is expected
         if (keyword.equals("INSERT INTO") || keyword.equals("FROM") || keyword.equals("JOIN")) {
             this.queries.put(keyword, this.tokens.get(start + 1));
-        } else { // when argument is an array
+        } else { // when multiple values are expected
             ArrayList<String> args = new ArrayList<>();
             for (int i = start + 1; i < end; i++) {
                 args.add(this.tokens.get(i));
@@ -103,15 +102,5 @@ public class QueryParser {
         ArrayList<Pair<String, Integer>> pairsArray = makeTokenPairList();
         extractArguments(pairsArray);
     }
-
-//    public static void main(String[] args) {
-//        QueryParser parser = new QueryParser();
-//        String query = parser.getUserQueryFromCLI();
-//        parser.tokens = parser.makeArrayQuery(query);
-//        //System.out.println(parser.tokens);
-//        ArrayList<Pair<String, Integer>> pairsArray = parser.makeTokenPairList();
-//        parser.extractArguments(pairsArray);
-//        //System.out.println(parser.queries);
-//    }
 
 }
