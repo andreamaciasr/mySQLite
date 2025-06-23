@@ -31,6 +31,7 @@ public class QueryExecutor {
     }
 
     private void initializeTables() {
+        // "FROM" and "JOIN" are the keys in the queriesMap that contain the file paths to the CSV files
         csvTable1.createTableFromCSV((String) queriesMap.get("FROM"));
         this.table1 = csvTable1.getTable();
         this.table1Headers = csvTable1.getColumnsNames();
@@ -42,6 +43,7 @@ public class QueryExecutor {
             this.table2Headers = csvTable2.getColumnsNames();
         } else {
             this.table2 = new ArrayList<>();
+            // If there is no JOIN, we set the second table to an empty list and headers to an empty array
             this.table2Headers = new String[0];
         }
     }
@@ -71,17 +73,21 @@ public class QueryExecutor {
         whereOperations.put(operator, function);
     }
 
+    // method to cast data types to be able to use the compare method
     private int compare(Object left, Object right) {
+        // one value from WHERE can be an integer if it comes from the table (ex: table.id),
+        // if it comes from the query, it is always a String
         return switch (left) {
             case String s when right instanceof String -> s.compareTo((String) right);
             case Integer i when right instanceof Integer ->
-                    Integer.compare(Integer.parseInt((String) left), (Integer) right);
+                    Integer.compare(i, (Integer) right);
             case String s when right instanceof Integer -> Integer.compare(Integer.parseInt(s), (Integer) right);
             case Integer i when right instanceof String -> Integer.compare(i, Integer.parseInt((String) right));
             case null, default -> throw new IllegalArgumentException("Unsupported types on WHERE condition");
         };
     }
 
+    // this method extracts the table name from the file path
     public String extractTableName(String filePath) {
         String regex = ".*/(.*?)\\.csv$|^(.*?)\\.csv$";
         Pattern pattern = Pattern.compile(regex);
@@ -115,7 +121,6 @@ public class QueryExecutor {
     }
 
     public Object parseWHEREArgument(String argument, LinkedHashMap<String, Object> row1, LinkedHashMap<String, Object> row2) {
-
         Integer number = tryParseInt(argument);
         if (number != null) return number;
 
@@ -147,10 +152,13 @@ public class QueryExecutor {
     public Boolean doWHERE(LinkedHashMap<String, Object> table1, LinkedHashMap<String, Object> table2) {
         if (this.queryArr.contains("WHERE") && !((ArrayList<?>) queriesMap.get("WHERE")).isEmpty()) {
 
-            Object left = parseWHEREArgument(this.WHEREArgs.getFirst(), table1, table2); // this checks for formats: table.field, 'String' or Integer and return the value ready to be passed to function
+            // this checks for formats: table.field, 'String' or Integer and returns the value ready to be passed to the function
+            Object left = parseWHEREArgument(this.WHEREArgs.getFirst(), table1, table2);
             Object right = parseWHEREArgument(this.WHEREArgs.get(2), table1, table2);
+            // this checks for the operator, ex: '=', '!=', '<'
             String operator = this.WHEREArgs.get(1);
 
+            // get the function that corresponds to the operator
             BiFunction<Object, Object, Boolean> fn = whereOperations.get(operator);
 
             if (fn != null) {
@@ -164,8 +172,8 @@ public class QueryExecutor {
     }
 
 
-    // getField gets the fields when passed the whole argument string, like "movies.director_id = directors.id"
-    public String getField(ArrayList<String> conditionStrings, String tableName) {
+    // gets the column name from the table when passed a string like "movies.director_id = directors.id"
+    public String getColumn(ArrayList<String> conditionStrings, String tableName) {
         String conditionString = String.join(" ", conditionStrings);
         String regex = tableName + "\\.(\\w+)";
         Pattern pattern = Pattern.compile(regex);
@@ -173,7 +181,7 @@ public class QueryExecutor {
         if (matcher.find()) {
             return matcher.group(1);
         }
-        // add something for unmatched table name, try catch block
+        System.out.println("Table name not found: " + conditionString);
         return null;
     }
 
@@ -194,10 +202,10 @@ public class QueryExecutor {
             case "SELECT" -> {
                 if (queriesMap.get("JOIN") != "") {
                     ArrayList<String> ONConditionAsString = (ArrayList<String>) this.queriesMap.get("ON");// "movies.director_id = directors.id"
-                    String ONTable1Field = getField(ONConditionAsString, this.firstTableName);
-                    String ONTable2Field = getField(ONConditionAsString, this.secondTableName);
+                    String ONTable1Column = getColumn(ONConditionAsString, this.firstTableName);
+                    String ONTable2Column = getColumn(ONConditionAsString, this.secondTableName);
 
-                    resultsTable = getSelectWithJoin(table1, table2, ONTable1Field, ONTable2Field);
+                    resultsTable = getSelectWithJoin(table1, table2, ONTable1Column, ONTable2Column);
 
                     return resultsTable;
                 } else {
